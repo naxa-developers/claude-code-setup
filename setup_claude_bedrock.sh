@@ -32,8 +32,7 @@ cat << 'EOF'
 ##*                         *
 EOF
 
-sleep 2
-clear
+sleep 1
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  Claude Code CLI + Bedrock Setup${NC}"
