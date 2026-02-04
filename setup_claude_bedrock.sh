@@ -6,7 +6,7 @@
 #
 # Author: NAXA | Platform: macOS and Linux
 
-set -e
+set -euo pipefail
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -126,7 +126,7 @@ CURL_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
 HTTP_CODE=$(echo "$CURL_RESPONSE" | tail -n1)
 RESPONSE_BODY=$(echo "$CURL_RESPONSE" | head -n-1)
 
-if [ "$HTTP_CODE" -eq 200 ]; then
+if [ "$HTTP_CODE" = "200" ]; then
     echo -e "${GREEN}✓ AWS Bedrock connection successful!${NC}"
 else
     echo -e "${RED}✗ Connection failed (HTTP $HTTP_CODE)${NC}"
@@ -138,23 +138,26 @@ else
     echo "  3. Verify AWS_REGION is valid: $AWS_REGION"
     echo ""
     echo "Run this script again to re-enter your credentials."
-    echo ""
-    echo "Response: $RESPONSE_BODY"
+    if [ -n "${RESPONSE_BODY:-}" ]; then
+        echo "Response: $RESPONSE_BODY"
+    fi
     exit 1
 fi
 
 echo ""
 
-CURRENT_SHELL=$(basename "$SHELL")
-OS_TYPE=$(uname -s)
+CURRENT_SHELL=$(basename "${SHELL}" 2>/dev/null || echo "bash")
+OS_TYPE=$(uname -s 2>/dev/null || echo "Linux")
 echo -e "${YELLOW}Detected OS: $OS_TYPE${NC}"
 echo -e "${YELLOW}Detected shell: $CURRENT_SHELL${NC}\n"
 
 install_nvm() {
     echo "Installing nvm (Node Version Manager)..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+    if ! curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash; then
+        echo -e "${RED}✗ nvm installation failed${NC}"
+        return 1
+    fi
 
-    # Load nvm into current session
     export NVM_DIR="$HOME/.nvm"
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
@@ -170,14 +173,16 @@ install_nvm() {
 ensure_npm() {
     if command -v npm &> /dev/null; then
         echo -e "${GREEN}✓ npm is already installed${NC}"
-        npm --version
+        npm --version 2>/dev/null || true
         return 0
     fi
 
     echo -e "${YELLOW}npm not found. Installing via nvm...${NC}"
 
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    if [ -s "$NVM_DIR/nvm.sh" ]; then
+        \. "$NVM_DIR/nvm.sh"
+    fi
 
     if ! command -v nvm &> /dev/null; then
         echo "nvm not found. Installing nvm..."
@@ -191,13 +196,13 @@ ensure_npm() {
     fi
 
     echo "Installing Node.js LTS via nvm..."
-    nvm install --lts
-    nvm use --lts
+    nvm install --lts 2>&1 || true
+    nvm use --lts 2>&1 || true
 
     if command -v npm &> /dev/null; then
         echo -e "${GREEN}✓ Node.js and npm installed successfully via nvm${NC}"
-        node --version
-        npm --version
+        node --version 2>/dev/null || true
+        npm --version 2>/dev/null || true
         return 0
     else
         echo -e "${RED}✗ Failed to install npm via nvm${NC}"
@@ -308,9 +313,9 @@ fi
 
 echo ""
 
-echo -e "${GREEN}[Step 3/5] Configuring shell to auto-load .env file...${NC}"
+echo -e "${GREEN}[Step 3/5] Configuring shell to auto-load environment...${NC}"
 
-ENV_FILE_ABSOLUTE="$(cd "$(dirname "$ENV_FILE")" && pwd)/$(basename "$ENV_FILE")"
+ENV_FILE_ABSOLUTE="$(cd "$(dirname "${ENV_FILE:-.env}")" && pwd)/$(basename "${ENV_FILE:-.env}")"
 
 NVM_INSTALLED=false
 if [ -d "$HOME/.nvm" ]; then
