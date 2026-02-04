@@ -389,28 +389,6 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  ✓ SETUP COMPLETE!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "${CYAN}Configuration Summary:${NC}"
-echo "  ✓ Environment: $ENV_FILE_ABSOLUTE"
-echo "  ✓ AWS Region: $AWS_REGION"
-echo "  ✓ Bedrock: enabled"
-echo "  ✓ Shell: configured"
-if command -v code &> /dev/null && code --list-extensions 2>/dev/null | grep -q "Anthropic.claude-code"; then
-    echo "  ✓ VSCode: Claude Code extension installed"
-fi
-[ "$MCP_INSTALLED" = true ] && echo "  ✓ MCP Servers: installed"
-echo ""
-
-if command -v claude &> /dev/null; then
-    echo -e "${CYAN}Claude Code Version:${NC}"
-    claude --version
-fi
-echo ""
-
-echo -e "${CYAN}Next Steps:${NC}"
-echo -e "  1. Source the environment: ${YELLOW}source .env${NC}"
-echo -e "  2. Verify connection: ${YELLOW}claude --version${NC}"
-echo -e "  3. Start coding: ${YELLOW}claude <your-file>${NC}"
-echo ""
 echo -e "${CYAN}Documentation:${NC}"
 echo "  • CLI: https://github.com/anthropics/claude-code"
 echo "  • Docs: https://docs.anthropic.com/claude/docs/claude-code"
